@@ -1,0 +1,36 @@
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Docker
+*.tar
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Tests
+.pytest_cache/
+
+# JSON / CSV files
+*.json
+*.csv
+
+# User generated data
+data/
+uploads/
+
+# Logs (already have *.log but keep folder safe)
+logs/

@@ -1,0 +1,49 @@
+services:
+  
+  chatbotservice:
+    ports:
+      - "3000:80"
+    volumes:
+      - ${PWD}/backend/src/chatbot_service:/app
+      - ${PWD}/backend/src/common:/app/app/common
+      - ${PWD}/data:/app/data
+    env_file:
+      - .env
+    environment:
+      - HOST_PROJECT_ROOT=${PWD}
+      - TZ=Asia/Kolkata
+    networks:
+      - acl-chatbot-dev
+
+  postgresdb:
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - postgresdb-data:/var/lib/postgresql/data/pgdata
+      - ./db/init:/docker-entrypoint-initdb.d/
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - acl-chatbot-dev
+  
+  ngrok:
+    ports:
+      - "4040:4040"
+    env_file:
+      - .env
+    environment:
+      NGROK_AUTHTOKEN: '${NGROK_AUTH_TOKEN}'
+    networks:
+      - acl-chatbot-dev
+
+networks:
+  acl-chatbot-dev:
+    driver: bridge
+
+volumes:
+  postgresdb-data:
+   name: aclbot_postgresdb_data
+   labels:
+    keep: true

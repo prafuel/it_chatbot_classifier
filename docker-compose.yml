@@ -1,0 +1,20 @@
+services:
+  chatbotservice:
+    image: '${DOCKER_CHATBOTSERVICE}'
+    container_name: '${DOCKER_CHATBOTSERVICE}'
+    build:
+      context: ${PWD}/backend/src
+      dockerfile: chatbot_service/chatbot_service.dockerfile
+    restart: always
+    depends_on:
+      - ngrok
+
+  postgresdb:
+    image: postgres:15
+    container_name: '${DOCKER_POSTGRESDB}'
+    restart: always
+
+  ngrok:
+    image: ngrok/ngrok:alpine
+    restart: always
+    command: http chatbotservice:80 --log=stdout

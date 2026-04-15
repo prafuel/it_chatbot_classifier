@@ -1,0 +1,58 @@
+# ===========================================
+# .dockerignore – backend/src build context
+# ===========================================
+
+# ---- Version control ----
+.git
+.gitignore
+
+# ---- Virtual environments ----
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# ---- Python bytecode / artefacts ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Testing ----
+.pytest_cache/
+.coverage
+htmlcov/
+**/tests/
+
+# ---- uv (not used in Docker builds) ----
+uv.lock
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Data / uploads (mounted as volumes at runtime) ----
+data/
+uploads/
+
+# ---- Docker files (not needed inside images) ----
+*.dockerfile
+docker-compose*.yml
+Makefile
+
+# ---- Misc ----
+*.tar
+*.md
+LICENSE
