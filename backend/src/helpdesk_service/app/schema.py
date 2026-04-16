@@ -23,6 +23,10 @@ class SourceEnum(str, Enum):
     email = "email"
 
 
+# ---------------------------------------------------------------------------
+# Categories
+# ---------------------------------------------------------------------------
+
 class CategoryBase(BaseModel):
     name: str
 
@@ -32,6 +36,9 @@ class CategoryResponse(CategoryBase):
     class Config:
         from_attributes = True
 
+
+class SubCategoryCreate(BaseModel):
+    name: str
 
 class SubCategoryBase(BaseModel):
     name: str
@@ -44,6 +51,10 @@ class SubCategoryResponse(SubCategoryBase):
         from_attributes = True
 
 
+# ---------------------------------------------------------------------------
+# Tickets
+# ---------------------------------------------------------------------------
+
 class TicketBase(BaseModel):
     title: str
     description: str
@@ -54,6 +65,19 @@ class TicketBase(BaseModel):
 
 class TicketCreate(TicketBase):
     created_by: uuid.UUID
+
+class TicketUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[PriorityEnum] = None
+    category_id: Optional[uuid.UUID] = None
+    sub_category_id: Optional[uuid.UUID] = None
+
+class TicketStatusUpdate(BaseModel):
+    status: StatusEnum
+
+class TicketAssign(BaseModel):
+    assigned_to: uuid.UUID
 
 class TicketResponse(TicketBase):
     ticket_id: uuid.UUID
@@ -69,21 +93,28 @@ class TicketResponse(TicketBase):
         from_attributes = True
 
 
-class TicketCommentBase(BaseModel):
+# ---------------------------------------------------------------------------
+# Comments
+# ---------------------------------------------------------------------------
+
+class TicketCommentCreate(BaseModel):
     comment_text: str
-    ticket_id: uuid.UUID
     user_id: uuid.UUID
 
-class TicketCommentCreate(TicketCommentBase):
-    pass
-
-class TicketCommentResponse(TicketCommentBase):
+class TicketCommentResponse(BaseModel):
     comment_id: uuid.UUID
+    ticket_id: uuid.UUID
+    user_id: uuid.UUID
+    comment_text: str
     created_at: datetime
 
     class Config:
         from_attributes = True
 
+
+# ---------------------------------------------------------------------------
+# Knowledge Base
+# ---------------------------------------------------------------------------
 
 class KnowledgeBaseBase(BaseModel):
     title: str
