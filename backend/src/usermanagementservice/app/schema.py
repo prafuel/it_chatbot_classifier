@@ -24,3 +24,23 @@ class TokenResponse(BaseModel):
 class SignInRequest(BaseModel):
     email: EmailStr = Field(..., description='email of the user')
     password: constr(min_length=1) = Field(..., description='password')
+
+from enum import Enum
+from datetime import datetime
+import uuid
+
+class RoleEnum(str, Enum):
+    USER = "USER"
+    IT_AGENT = "IT_AGENT"
+    ADMIN = "ADMIN"
+
+class UserResponse(BaseModel):
+    user_id: uuid.UUID
+    name: str
+    email: EmailStr
+    role: RoleEnum
+    is_available: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

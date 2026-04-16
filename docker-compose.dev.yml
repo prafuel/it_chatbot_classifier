@@ -1,10 +1,10 @@
 services:
   
-  chatbotservice:
+  helpdeskservice:
     ports:
       - "3000:80"
     volumes:
-      - ${PWD}/backend/src/chatbot_service:/app
+      - ${PWD}/backend/src/helpdesk_service:/app
       - ${PWD}/backend/src/common:/app/app/common
       - ${PWD}/data:/app/data
     env_file:
@@ -13,7 +13,22 @@ services:
       - HOST_PROJECT_ROOT=${PWD}
       - TZ=Asia/Kolkata
     networks:
-      - acl-chatbot-dev
+      - it-support-dev
+
+  usermanagementservice:
+    ports:
+      - "3001:80"
+    volumes:
+      - ${PWD}/backend/src/usermanagementservice:/app
+      - ${PWD}/backend/src/common:/app/app/common
+      - ${PWD}/data:/app/data
+    env_file:
+      - .env
+    environment:
+      - HOST_PROJECT_ROOT=${PWD}
+      - TZ=Asia/Kolkata
+    networks:
+      - it-support-dev
 
   postgresdb:
     ports:
@@ -26,7 +41,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
-      - acl-chatbot-dev
+      - it-support-dev
   
   ngrok:
     ports:
@@ -36,14 +51,14 @@ services:
     environment:
       NGROK_AUTHTOKEN: '${NGROK_AUTH_TOKEN}'
     networks:
-      - acl-chatbot-dev
+      - it-support-dev
 
 networks:
-  acl-chatbot-dev:
+  it-support-dev:
     driver: bridge
 
 volumes:
   postgresdb-data:
-   name: aclbot_postgresdb_data
+   name: itsupport_postgresdb_data
    labels:
     keep: true

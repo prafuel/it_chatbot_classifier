@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# cd backend/src/chatbot_service
+# cd backend/src/helpdesk_service
 
-poetry init --no-interaction --python "^3.11" --name "chatbot-service" --description "Chatbot service"
+poetry init --no-interaction --python "^3.11" --name "helpdesk-service" --description "Helpdesk service"
 poetry add \
   fastapi==0.115.6 \
   uvicorn==0.34.0 \

@@ -1,7 +1,7 @@
 [project]
-name = "chatbot-service"
+name = "helpdesk-service"
 version = "0.1.0"
-description = "Chatbot service"
+description = "Helpdesk service"
 authors = [
     {name = "prafuel",email = "official.sonawaneprafull@gmail.com"}
 ]
