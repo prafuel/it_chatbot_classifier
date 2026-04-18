@@ -35,8 +35,9 @@ class RoleEnum(str, Enum):
     ADMIN = "ADMIN"
 
 class UserResponse(BaseModel):
-    user_id: uuid.UUID
-    name: str
+    id: uuid.UUID
+    first_name: str
+    last_name: str
     email: EmailStr
     role: RoleEnum
     is_available: bool

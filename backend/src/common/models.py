@@ -41,12 +41,15 @@ class SourceEnum(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
     
-    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
+    encrypted_password = Column(String(255), nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
     is_available = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Category(Base):
@@ -74,8 +77,8 @@ class Ticket(Base):
     priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.category_id"), nullable=True)
     sub_category_id = Column(UUID(as_uuid=True), ForeignKey("sub_categories.sub_category_id"), nullable=True)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
-    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
@@ -88,7 +91,7 @@ class TicketComment(Base):
     
     comment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ticket_id = Column(UUID(as_uuid=True), ForeignKey("tickets.ticket_id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     comment_text = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -102,6 +105,6 @@ class KnowledgeBase(Base):
     solution_steps = Column(Text, nullable=False)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.category_id"), nullable=True)
     tags = Column(JSON, nullable=True)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     approved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

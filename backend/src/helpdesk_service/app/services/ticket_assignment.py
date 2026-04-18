@@ -41,7 +41,7 @@ def _find_least_loaded_agent(db: Session) -> Optional[User]:
     # Join with users, filter available IT_AGENTs, order by least tickets
     agent = (
         db.query(User)
-        .outerjoin(in_progress_count, User.user_id == in_progress_count.c.assigned_to)
+        .outerjoin(in_progress_count, User.id == in_progress_count.c.assigned_to)
         .filter(User.role == RoleEnum.IT_AGENT)
         .filter(User.is_available == True)
         .order_by(func.coalesce(in_progress_count.c.active_tickets, 0).asc())
@@ -62,9 +62,9 @@ def auto_assign_ticket(db: Session, ticket_id: uuid.UUID) -> Ticket:
     agent = _find_least_loaded_agent(db)
 
     if agent:
-        ticket = crud_ticket.assign_ticket(db, ticket_id, agent.user_id)
+        ticket = crud_ticket.assign_ticket(db, ticket_id, agent.id)
         logger.info(
-            f"Auto-assigned ticket {ticket_id} to agent {agent.user_id} ({agent.name})"
+            f"Auto-assigned ticket {ticket_id} to agent {agent.id} ({agent.first_name})"
         )
     else:
         ticket = crud_ticket.update_ticket_status(db, ticket_id, StatusEnum.PENDING)
@@ -95,10 +95,10 @@ def reassign_pending_tickets(db: Session) -> list:
             logger.info("No more available agents — stopping reassignment")
             break
 
-        crud_ticket.assign_ticket(db, ticket.ticket_id, agent.user_id)
+        crud_ticket.assign_ticket(db, ticket.ticket_id, agent.id)
         reassigned.append(ticket)
         logger.info(
-            f"Reassigned pending ticket {ticket.ticket_id} to agent {agent.user_id}"
+            f"Reassigned pending ticket {ticket.ticket_id} to agent {agent.id}"
         )
 
     return reassigned

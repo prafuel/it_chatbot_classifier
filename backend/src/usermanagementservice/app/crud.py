@@ -9,9 +9,7 @@ class CRUDUser:
             first_name=user_data.first_name,
             last_name=user_data.last_name,
             email=user_data.email,
-            encrypted_password=user_data.password,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            encrypted_password=user_data.password
         )
         db.add(new_user)
         db.commit()
