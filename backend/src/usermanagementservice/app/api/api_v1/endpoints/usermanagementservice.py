@@ -35,7 +35,7 @@ def signup(request: schema.SignUpRequest, db: Session = Depends(get_db)):
         request.password = Hash.encode_password(request.password)
         new_user = utils.save_user_details(db, request)
         new_user_dict = {
-            "id": new_user.id,
+            "id": str(new_user.id),
             "first_name": new_user.first_name,
             "last_name": new_user.last_name,
             "email": new_user.email,
@@ -74,7 +74,7 @@ def sign_in(request: schema.SignInRequest, db: Session = Depends(get_db)):
             )
         else:
             user_dict = {
-            "id": user_data.id,
+            "id": str(user_data.id),
             "first_name": user_data.first_name,
             "last_name": user_data.last_name,
             "email": user_data.email,
