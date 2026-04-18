@@ -41,7 +41,7 @@ def signup(request: schema.SignUpRequest, db: Session = Depends(get_db)):
             "email": new_user.email,
         }
         jwt_token = create_token(new_user_dict)
-        token_obj = utils.create_token_object(jwt_token, new_user.role)
+        token_obj = utils.create_token_object(jwt_token, user_type=new_user.role)
         logger.info("Customer sign up successful. Sending jwt token")
         return token_obj
     except Exception as e:
@@ -80,7 +80,7 @@ def sign_in(request: schema.SignInRequest, db: Session = Depends(get_db)):
                 "email": user_data.email,
             }
             jwt_token = create_token(user_dict)
-            token_obj = utils.create_token_object(jwt_token, user_data.role)
+            token_obj = utils.create_token_object(jwt_token, user_type=user_data.role)
             logger.info("Customer sign in successful. Sending jwt token")
             return token_obj
     except Exception as e:
