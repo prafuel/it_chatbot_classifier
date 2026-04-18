@@ -18,11 +18,10 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Copy pyproject.toml & poetry.lock for layer caching
 COPY helpdesk_service/pyproject.toml helpdesk_service/poetry.lock* /app/
-COPY helpdesk_service/pyproject.toml helpdesk_service/poetry.lock* /app/
 
 # Install all dependencies declared in pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/pypoetry \
-    poetry install --only main --no-root
+    poetry install --only main --no-root --no-cache
 
 # Pre-download ML models to bake them into the Docker image
 RUN --mount=type=cache,target=/root/.cache/huggingface \
