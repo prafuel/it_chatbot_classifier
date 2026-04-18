@@ -25,11 +25,12 @@ def save_user_details(db, user_details):
     return user
 
 
-def create_token_object(user_jwt_token):
+def create_token_object(user_jwt_token, role=None):
     """
     This function takes JWT token as an argument and returns a token object
     """
     token_obj = schema.TokenResponse()
     token_obj.token = user_jwt_token
     token_obj.token_type = "Bearer"
+    token_obj.role = role
     return token_obj
