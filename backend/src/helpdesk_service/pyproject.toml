@@ -1,7 +1,7 @@
 [project]
-name = "helpdesk-service"
+name = "it-support-service"
 version = "0.1.0"
-description = "Helpdesk service"
+description = "IT Support Automation System"
 authors = [
     {name = "prafuel",email = "official.sonawaneprafull@gmail.com"}
 ]
@@ -29,7 +29,16 @@ dependencies = [
     "sqlalchemy-utils (>=0.42.1,<0.43.0)",
     "tenacity (>=9.1.4,<10.0.0)",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "torch (>=2.0.0)",
 ]
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+torch = { version = ">=2.0.0", source = "pytorch-cpu" }
 
 
 [build-system]
