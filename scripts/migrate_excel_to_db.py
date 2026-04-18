@@ -96,12 +96,15 @@ class SourceEnum(str, enum.Enum):
 # ---------------------------------------------------------------------------
 class User(Base):
     __tablename__ = "users"
-    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
+    encrypted_password = Column(String(255), nullable=False)
     is_available = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 class Category(Base):
     __tablename__ = "categories"
@@ -193,18 +196,31 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
     rows = read_sheet(wb, "users")
     id_map: dict[int, uuid.UUID] = {}
     count = 0
+    # Placeholder hash for "Password@123" (should match app's hashing if possible)
+    # Using a simple string for now if the app is currently undergoing redesign
+    placeholder_password = "encrypted_password_placeholder" 
+    
     for r in rows:
         int_id = int(r["user_id"])
         uid = make_uuid("users", int_id)
         id_map[int_id] = uid
+        
+        full_name = str(r["name"]).strip()
+        name_parts = full_name.split(" ", 1)
+        f_name = name_parts[0]
+        l_name = name_parts[1] if len(name_parts) > 1 else "Unknown"
+        
         stmt = pg_insert(User.__table__).values(
-            user_id=uid,
-            name=str(r["name"]),
+            id=uid,
+            first_name=f_name,
+            last_name=l_name,
             email=str(r["email"]),
             role=RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER,
+            encrypted_password=placeholder_password,
             is_available=parse_bool(r.get("is_available")),
             created_at=parse_datetime(r.get("created_at")),
-        ).on_conflict_do_nothing(index_elements=["user_id"])
+            updated_at=parse_datetime(r.get("created_at")),
+        ).on_conflict_do_nothing(index_elements=["id"])
         result = session.execute(stmt)
         count += result.rowcount
     session.commit()
