@@ -23,6 +23,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, insert as pg_insert
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ---------------------------------------------------------------------------
 # Resolve paths
@@ -196,9 +199,9 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
     rows = read_sheet(wb, "users")
     id_map: dict[int, uuid.UUID] = {}
     count = 0
-    # Placeholder hash for "Password@123" (should match app's hashing if possible)
-    # Using a simple string for now if the app is currently undergoing redesign
-    placeholder_password = "encrypted_password_placeholder" 
+    # Use a valid bcrypt hash for a default password: "Password123!"
+    default_password = "Password123!"
+    hashed_password = pwd_context.hash(default_password)
     
     for r in rows:
         int_id = int(r["user_id"])
@@ -216,7 +219,7 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
             last_name=l_name,
             email=str(r["email"]),
             role=RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER,
-            encrypted_password=placeholder_password,
+            encrypted_password=hashed_password,
             is_available=parse_bool(r.get("is_available")),
             created_at=parse_datetime(r.get("created_at")),
             updated_at=parse_datetime(r.get("created_at")),
@@ -225,6 +228,7 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
         count += result.rowcount
     session.commit()
     print(f"  users: {count} inserted (of {len(rows)} rows)")
+    print(f"  INFO: All migrated users have been assigned the default password: {default_password}")
     return id_map
 
 
