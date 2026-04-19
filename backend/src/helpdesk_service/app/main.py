@@ -41,7 +41,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["http://localhost:8080"],
+    # allow_origins=["http://localhost:8080"], update when you want to deploy on local
     allow_origins=["https://support-sphere-two.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
