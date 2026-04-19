@@ -15,21 +15,6 @@ services:
     networks:
       - it-support-dev
 
-  usermanagementservice:
-    ports:
-      - "3001:80"
-    volumes:
-      - ${PWD}/backend/src/usermanagementservice:/app
-      - ${PWD}/backend/src/common:/app/app/common
-      - ${PWD}/data:/app/data
-    env_file:
-      - .env
-    environment:
-      - HOST_PROJECT_ROOT=${PWD}
-      - TZ=Asia/Kolkata
-    networks:
-      - it-support-dev
-
   postgresdb:
     ports:
       - "5432:5432"

@@ -3,6 +3,7 @@ IT Support Helpdesk Service — FastAPI application entry point.
 """
 
 import logging
+import uvicorn
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
@@ -40,7 +41,8 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://support-sphere-two.vercel.app", "*"],
+    # allow_origins=["http://localhost:8080"],
+    allow_origins=["https://support-sphere-two.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,3 +59,7 @@ app.include_router(
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "healthy", "service": "helpdesk"}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=3000)

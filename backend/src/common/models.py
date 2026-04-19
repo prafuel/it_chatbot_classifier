@@ -46,7 +46,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
     is_available = Column(Boolean, default=True)
+    encrypted_password = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Category(Base):

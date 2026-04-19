@@ -101,7 +101,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
     is_available = Column(Boolean, default=True)
+    encrypted_password = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 class Category(Base):
     __tablename__ = "categories"
@@ -203,7 +205,9 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
             email=str(r["email"]),
             role=RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER,
             is_available=parse_bool(r.get("is_available")),
+            encrypted_password=None, # Will be set to default if needed, or left NULL
             created_at=parse_datetime(r.get("created_at")),
+            updated_at=parse_datetime(r.get("updated_at")) or datetime.utcnow(),
         ).on_conflict_do_nothing(index_elements=["user_id"])
         result = session.execute(stmt)
         count += result.rowcount

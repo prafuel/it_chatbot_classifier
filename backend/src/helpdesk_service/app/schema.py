@@ -1,8 +1,44 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, Dict, List, Any
 from enum import Enum
+
+
+# ---------------------------------------------------------------------------
+# User Management
+# ---------------------------------------------------------------------------
+
+class RoleEnum(str, Enum):
+    USER = "USER"
+    IT_AGENT = "IT_AGENT"
+    ADMIN = "ADMIN"
+
+class SignUpRequest(BaseModel):
+    first_name: str = Field(..., description='First Name')
+    last_name: str = Field(..., description='Last Name')
+    email: EmailStr = Field(..., description='Email')
+    password: str = Field(..., description='Password')
+
+class TokenResponse(BaseModel):
+    token: Optional[str] = Field(None, description='JWT Token')
+    token_type: Optional[str] = Field(None, description='Token Type')
+    user_type: Optional[str] = Field(None, description='Type of user')
+
+class SignInRequest(BaseModel):
+    email: EmailStr = Field(..., description='email of the user')
+    password: str = Field(..., description='password')
+
+class UserResponse(BaseModel):
+    user_id: uuid.UUID
+    name: str
+    email: EmailStr
+    role: RoleEnum
+    is_available: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class StatusEnum(str, Enum):
