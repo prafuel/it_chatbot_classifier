@@ -174,4 +174,9 @@ class KnowledgeBaseResponse(KnowledgeBaseBase):
 
 class KnowledgeBaseQueryRequest(BaseModel):
     query: str = Field(..., description="The search query string")
-    limit: Optional[int] = Field(10, description="Max number of results to return")
+    top_k: Optional[int] = Field(5, description="Max number of sources to consider")
+    use_classification: Optional[bool] = Field(True, description="Whether to use query classification")
+
+class KnowledgeBaseQueryResponse(BaseModel):
+    answer: str = Field(..., description="AI generated answer based on KB context")
+    relevant_articles: List[KnowledgeBaseResponse] = Field(..., description="The KB articles used to generate the answer")
