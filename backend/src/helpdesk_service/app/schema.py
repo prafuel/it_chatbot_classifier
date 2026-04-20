@@ -170,3 +170,8 @@ class KnowledgeBaseResponse(KnowledgeBaseBase):
 
     class Config:
         from_attributes = True
+
+
+class KnowledgeBaseQueryRequest(BaseModel):
+    query: str = Field(..., description="The search query string")
+    limit: Optional[int] = Field(10, description="Max number of results to return")
