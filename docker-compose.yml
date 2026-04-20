@@ -1,10 +1,10 @@
 services:
-  chatbotservice:
-    image: '${DOCKER_CHATBOTSERVICE}'
-    container_name: '${DOCKER_CHATBOTSERVICE}'
+  helpdeskservice:
+    image: '${DOCKER_HELPDESKSERVICE}'
+    container_name: '${DOCKER_HELPDESKSERVICE}'
     build:
       context: ${PWD}/backend/src
-      dockerfile: chatbot_service/chatbot_service.dockerfile
+      dockerfile: helpdesk_service/helpdesk_service.dockerfile
     restart: always
     depends_on:
       - ngrok
@@ -17,4 +17,4 @@ services:
   ngrok:
     image: ngrok/ngrok:alpine
     restart: always
-    command: http chatbotservice:80 --log=stdout
+    command: http helpdeskservice:80 --log=stdout

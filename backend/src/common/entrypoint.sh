@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Starting ACL Chatbot service..."
+echo "Starting IT Support service..."
 echo "--------------------------------"
 
 # Fix ownership of data directories to match host user (UID 1000)

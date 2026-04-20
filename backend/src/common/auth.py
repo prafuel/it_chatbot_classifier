@@ -3,6 +3,7 @@ import jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from passlib.context import CryptContext
 
 from app.common import api_logging
 
@@ -11,8 +12,10 @@ logger = api_logging.logger
 # ---------------------------------------------------------------------------
 # JWT Configuration (read from env, with sensible defaults)
 # ---------------------------------------------------------------------------
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "acl-chatbot-change-me-in-production-secret-key-2026")
-JWT_ALGORITHM  = "HS256"
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "it-support-change-me-in-production-secret-key-2026")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
 # In-memory blacklist for logout
@@ -20,8 +23,23 @@ token_blacklist: set[str] = set()
 
 
 # ---------------------------------------------------------------------------
-# Token creation
+# Token creation & Hashing
 # ---------------------------------------------------------------------------
+
+class Hash():
+    @staticmethod
+    def encode_password(password: str) -> str:
+        return pwd_context.hash(password)
+
+    @staticmethod
+    def verify(hashed_password: str, plain_password: str) -> bool:
+        return pwd_context.verify(plain_password, hashed_password)
+
+def create_token(data: dict) -> str:
+    payload = data.copy()
+    payload.update({"exp": datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)})
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
 
 def create_access_token() -> str:
     """Create a JWT token for the single admin user."""

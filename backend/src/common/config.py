@@ -25,11 +25,11 @@ class Settings(BaseSettings):
     azure_openai_temperature: float = 0.7
 
     # Authentication settings
-    jwt_secret_key: str = "acl-chatbot-change-me-in-production-secret-key-2026"
+    jwt_secret_key: str = "it-support-change-me-in-production-secret-key-2026"
     password_salt: str = ""
 
     # Encryption settings
-    ENCRYPTION_KEY: str = "acl-chatbot-32-char-encrypt-key!"
+    ENCRYPTION_KEY: str = "it-support-32-char-encrypt-key!"
 
     # API settings
     log_requests: bool = True
@@ -37,9 +37,6 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = "INFO"
-
-    # Pagination
-    BATCH_SIZE: int = 100
 
     class Config:
         # Point to the .env file in the project root
