@@ -9,14 +9,6 @@ services:
     depends_on:
       - ngrok
 
-  usermanagementservice:
-    image: '${DOCKER_USERMANAGEMENTSERVICE}'
-    container_name: '${DOCKER_USERMANAGEMENTSERVICE}'
-    build:
-      context: ${PWD}/backend/src
-      dockerfile: usermanagementservice/usermanagementservice.dockerfile
-    restart: always
-
   postgresdb:
     image: postgres:15
     container_name: '${DOCKER_POSTGRESDB}'

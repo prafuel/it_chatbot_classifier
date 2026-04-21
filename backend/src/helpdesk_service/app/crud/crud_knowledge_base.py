@@ -58,24 +58,37 @@ def list_kb_articles(
     return query.order_by(KnowledgeBase.created_at.desc()).offset(skip).limit(limit).all()
 
 
-def search_kb(db: Session, query_text: str, limit: int = 10) -> List[KnowledgeBase]:
+def search_kb(
+    db: Session,
+    query_text: str,
+    limit: int = 10,
+    approved_only: bool = False,
+) -> List[KnowledgeBase]:
     """
-    Keyword search across title, problem_description.
-    Only returns approved articles.
+    Keyword search across title, problem_description, and solution_steps.
+    Splits query into individual words and matches any of them (OR).
+    Set approved_only=True to restrict to approved articles only.
     """
-    pattern = f"%{query_text}%"
-    return (
-        db.query(KnowledgeBase)
-        .filter(KnowledgeBase.approved == True)
-        .filter(
-            or_(
-                KnowledgeBase.title.ilike(pattern),
-                KnowledgeBase.problem_description.ilike(pattern),
-            )
-        )
-        .limit(limit)
-        .all()
-    )
+    q = db.query(KnowledgeBase)
+
+    if approved_only:
+        q = q.filter(KnowledgeBase.approved == True)
+
+    # Build word-level conditions for better recall
+    words = [w.strip() for w in query_text.split() if len(w.strip()) > 2]
+    if not words:
+        words = [query_text.strip()]
+
+    word_conditions = []
+    for word in words:
+        pattern = f"%{word}%"
+        word_conditions.append(KnowledgeBase.title.ilike(pattern))
+        word_conditions.append(KnowledgeBase.problem_description.ilike(pattern))
+        word_conditions.append(KnowledgeBase.solution_steps.ilike(pattern))
+
+    q = q.filter(or_(*word_conditions))
+    return q.limit(limit).all()
+
 
 
 def approve_kb_article(db: Session, kb_id: uuid.UUID) -> Optional[KnowledgeBase]:

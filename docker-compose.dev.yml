@@ -1,25 +1,10 @@
 services:
-  
+
   helpdeskservice:
     ports:
       - "3000:80"
     volumes:
       - ${PWD}/backend/src/helpdesk_service:/app
-      - ${PWD}/backend/src/common:/app/app/common
-      - ${PWD}/data:/app/data
-    env_file:
-      - .env
-    environment:
-      - HOST_PROJECT_ROOT=${PWD}
-      - TZ=Asia/Kolkata
-    networks:
-      - it-support-dev
-
-  usermanagementservice:
-    ports:
-      - "3001:80"
-    volumes:
-      - ${PWD}/backend/src/usermanagementservice:/app
       - ${PWD}/backend/src/common:/app/app/common
       - ${PWD}/data:/app/data
     env_file:
@@ -42,7 +27,7 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
       - it-support-dev
-  
+
   ngrok:
     ports:
       - "4040:4040"

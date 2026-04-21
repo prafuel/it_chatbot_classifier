@@ -42,11 +42,17 @@ class User(Base):
     __tablename__ = "users"
     
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False)
+    # Auth fields (migrated from usermanagementservice)
+    id = Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4)
+    first_name = Column(String(255), nullable=True)
+    last_name = Column(String(255), nullable=True)
+    name = Column(String(255), nullable=True)
+    encrypted_password = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
     is_available = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Category(Base):

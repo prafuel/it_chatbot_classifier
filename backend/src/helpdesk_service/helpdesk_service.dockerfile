@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry (no export plugin needed anymore)
+# Install Poetry
 RUN pip install --no-cache-dir poetry
 
 # Tell Poetry to install into the system Python (no virtualenv)
@@ -18,11 +18,11 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Copy pyproject.toml & poetry.lock for layer caching
 COPY helpdesk_service/pyproject.toml helpdesk_service/poetry.lock* /app/
-COPY helpdesk_service/pyproject.toml helpdesk_service/poetry.lock* /app/
 
-# Install all dependencies declared in pyproject.toml
-# RUN poetry install --only main --no-interaction --no-ansi --no-root
-RUN poetry install --only main --no-root
+# Install all dependencies with BuildKit cache mount so repeated builds
+# reuse the downloaded wheel cache and skip already-installed packages.
+RUN --mount=type=cache,target=/root/.cache/pypoetry \
+    poetry install --only main --no-root
 
 # Pre-download ML models to bake them into the Docker image
 RUN python -c "\
