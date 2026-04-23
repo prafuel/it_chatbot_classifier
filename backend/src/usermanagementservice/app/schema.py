@@ -19,6 +19,7 @@ class SignUpRequest(BaseModel):
 class TokenResponse(BaseModel):
     token: Optional[str] = Field(None, description='JWT Token')
     token_type: Optional[str] = Field(None, description='Token Type')
+    user_type: Optional[str] = Field(None, description='Role of the user')
 
 
 class SignInRequest(BaseModel):

@@ -18,7 +18,7 @@ services:
     restart: always
 
   postgresdb:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     container_name: '${DOCKER_POSTGRESDB}'
     restart: always
 

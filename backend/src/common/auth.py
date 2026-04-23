@@ -92,11 +92,6 @@ class JWTBearer(HTTPBearer):
             )
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            if payload.get("sub") != "admin":
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Not an admin token",
-                )
             return payload
         except jwt.ExpiredSignatureError:
             raise HTTPException(
@@ -108,3 +103,47 @@ class JWTBearer(HTTPBearer):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
+
+# ---------------------------------------------------------------------------
+# RBAC Dependencies
+# ---------------------------------------------------------------------------
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.common.database import get_db
+from app.common.models import User, RoleEnum
+
+def get_current_user(payload: dict = Depends(JWTBearer()), db: Session = Depends(get_db)) -> User:
+    """Fetch the current authenticated user from the database based on JWT token."""
+    user_id = payload.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload: missing user ID",
+        )
+    user = db.query(User).filter(User.user_id == str(user_id)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user
+
+
+def get_it_staff_user(user: User = Depends(get_current_user)) -> User:
+    """Ensure the authenticated user is an IT_AGENT or ADMIN."""
+    if user.role not in (RoleEnum.IT_AGENT, RoleEnum.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough privileges. IT Agent or Admin permissions required.",
+        )
+    return user
+
+
+def get_admin_user(user: User = Depends(get_current_user)) -> User:
+    """Ensure the authenticated user is an ADMIN."""
+    if user.role != RoleEnum.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required.",
+        )
+    return user

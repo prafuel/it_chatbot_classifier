@@ -28,7 +28,8 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 # Resolve paths
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXCEL_PATH = PROJECT_ROOT / "data" / "claude_generated.xlsx"
+# EXCEL_PATH = PROJECT_ROOT / "data" / "claude_generated.xlsx"
+EXCEL_PATH = PROJECT_ROOT / "claude_generated.xlsx"
 ENV_PATH = PROJECT_ROOT / ".env"
 
 # ---------------------------------------------------------------------------
@@ -91,9 +92,21 @@ class SourceEnum(str, enum.Enum):
     portal = "portal"
     email = "email"
 
+class ApprovalStatusEnum(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    NA = "NA"
+
+
 # ---------------------------------------------------------------------------
 # ORM models (self-contained, mirrors common/models.py)
 # ---------------------------------------------------------------------------
+class AgentSpecialization(Base):
+    __tablename__ = "agent_specializations"
+    user_id = Column(UUID(as_uuid=True), primary_key=True)
+    category_id = Column(UUID(as_uuid=True), primary_key=True)
+
 class User(Base):
     __tablename__ = "users"
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -125,6 +138,14 @@ class Ticket(Base):
     sub_category_id = Column(UUID(as_uuid=True), nullable=True)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     assigned_to = Column(UUID(as_uuid=True), nullable=True)
+    
+    # Approval fields
+    needs_approval = Column(Boolean, default=False)
+    approver_id = Column(UUID(as_uuid=True), nullable=True)
+    designated_approver_type = Column(String(255), nullable=True)
+    approval_status = Column(Enum(ApprovalStatusEnum), default=ApprovalStatusEnum.NA)
+    approval_requested_at = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
@@ -168,7 +189,10 @@ def parse_datetime(val) -> datetime | None:
         return None
     if isinstance(val, datetime):
         return val
-    return datetime.fromisoformat(str(val))
+    try:
+        return datetime.fromisoformat(str(val))
+    except (ValueError, TypeError):
+        return None
 
 def parse_bool(val) -> bool:
     if val is None:
@@ -193,15 +217,21 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
     rows = read_sheet(wb, "users")
     id_map: dict[int, uuid.UUID] = {}
     count = 0
+    agents_uids = []
+    
     for r in rows:
         int_id = int(r["user_id"])
         uid = make_uuid("users", int_id)
         id_map[int_id] = uid
+        role = RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER
+        if role == RoleEnum.IT_AGENT:
+            agents_uids.append(uid)
+            
         stmt = pg_insert(User.__table__).values(
             user_id=uid,
             name=str(r["name"]),
             email=str(r["email"]),
-            role=RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER,
+            role=role,
             is_available=parse_bool(r.get("is_available")),
             created_at=parse_datetime(r.get("created_at")),
         ).on_conflict_do_nothing(index_elements=["user_id"])
@@ -209,7 +239,7 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
         count += result.rowcount
     session.commit()
     print(f"  users: {count} inserted (of {len(rows)} rows)")
-    return id_map
+    return id_map, agents_uids
 
 
 def migrate_categories(session: Session, wb) -> dict[int, uuid.UUID]:
@@ -358,6 +388,29 @@ def migrate_ticket_comments(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+import random
+
+def seed_agent_specializations(session: Session, agents_uids: list[uuid.UUID], categories_map: dict[int, uuid.UUID]):
+    """Assign up to 2 random specializations to each IT agent."""
+    count = 0
+    cat_uids = list(categories_map.values())
+    if not cat_uids:
+        return
+        
+    for agent_uid in agents_uids:
+        # Pick 2 unique random categories
+        assigned = random.sample(cat_uids, min(2, len(cat_uids)))
+        for cat_uid in assigned:
+            stmt = pg_insert(AgentSpecialization.__table__).values(
+                user_id=agent_uid,
+                category_id=cat_uid
+            ).on_conflict_do_nothing()
+            session.execute(stmt)
+            count += 1
+    session.commit()
+    print(f"  agent_specializations: {count} links created")
+
+
 def main():
     print(f"Connecting to: {DATABASE_URL.replace(os.environ['POSTGRES_PASSWORD'], '***')}")
     print(f"Excel file:    {EXCEL_PATH}\n")
@@ -375,8 +428,9 @@ def main():
 
     try:
         print("Migrating data (in FK-dependency order)...")
-        user_map = migrate_users(session, wb)
+        user_map, agents_uids = migrate_users(session, wb)
         cat_map = migrate_categories(session, wb)
+        seed_agent_specializations(session, agents_uids, cat_map)
         subcat_map = migrate_sub_categories(session, wb, cat_map)
         ticket_map = migrate_tickets(session, wb, user_map, cat_map, subcat_map)
         migrate_knowledge_base(session, wb, user_map, cat_map)

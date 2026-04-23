@@ -21,9 +21,17 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ensure database and tables exist."""
-    logger.info("Helpdesk Service starting up — creating database tables...")
+    """Startup: ensure database, pgvector extension, and tables exist."""
+    logger.info("Helpdesk Service starting up...")
     engine = get_db_engine()
+
+    # Ensure pgvector extension is available before creating tables
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+    logger.info("pgvector extension ensured.")
+
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables ready.")
     yield

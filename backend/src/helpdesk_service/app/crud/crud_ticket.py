@@ -10,7 +10,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.common.models import Ticket, StatusEnum, PriorityEnum, SourceEnum
+from app.common.models import Ticket, StatusEnum, PriorityEnum, SourceEnum, ApprovalStatusEnum
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,10 @@ def create_ticket(
     category_id: Optional[uuid.UUID] = None,
     sub_category_id: Optional[uuid.UUID] = None,
     source: SourceEnum = SourceEnum.chatbot,
+    needs_approval: bool = False,
+    approver_id: Optional[uuid.UUID] = None,
+    designated_approver_type: Optional[str] = None,
+    approval_status: ApprovalStatusEnum = ApprovalStatusEnum.NA,
 ) -> Ticket:
     """Create a new ticket with NOT_ASSIGNED status."""
     ticket = Ticket(
@@ -35,11 +39,16 @@ def create_ticket(
         sub_category_id=sub_category_id,
         source=source,
         status=StatusEnum.NOT_ASSIGNED,
+        needs_approval=needs_approval,
+        approver_id=approver_id,
+        designated_approver_type=designated_approver_type,
+        approval_status=approval_status,
+        approval_requested_at=datetime.utcnow() if needs_approval else None,
     )
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
-    logger.info(f"Ticket created: {ticket.ticket_id}")
+    logger.info(f"Ticket created: {ticket.ticket_id} (Approval: {needs_approval})")
     return ticket
 
 
@@ -132,33 +141,31 @@ def update_ticket(
     return ticket
 
 
-def count_tickets_by_status(db: Session) -> dict:
+def count_tickets_by_status(db: Session, agent_id: Optional[uuid.UUID] = None) -> dict:
     """Return ticket counts grouped by status."""
-    rows = (
-        db.query(Ticket.status, func.count(Ticket.ticket_id))
-        .group_by(Ticket.status)
-        .all()
-    )
+    query = db.query(Ticket.status, func.count(Ticket.ticket_id))
+    if agent_id:
+        query = query.filter(Ticket.assigned_to == agent_id)
+    rows = query.group_by(Ticket.status).all()
     return {status.value: count for status, count in rows}
 
 
-def count_resolved_by_agent(db: Session) -> List[dict]:
+def count_resolved_by_agent(db: Session, agent_id: Optional[uuid.UUID] = None) -> List[dict]:
     """Return number of resolved tickets per agent."""
-    rows = (
-        db.query(Ticket.assigned_to, func.count(Ticket.ticket_id))
-        .filter(Ticket.status == StatusEnum.RESOLVED)
-        .group_by(Ticket.assigned_to)
-        .all()
-    )
-    return [{"agent_id": str(agent_id), "resolved_count": count} for agent_id, count in rows if agent_id]
+    query = db.query(Ticket.assigned_to, func.count(Ticket.ticket_id)).filter(Ticket.status == StatusEnum.RESOLVED)
+    if agent_id:
+        query = query.filter(Ticket.assigned_to == agent_id)
+    rows = query.group_by(Ticket.assigned_to).all()
+    return [{"agent_id": str(a_id), "resolved_count": count} for a_id, count in rows if a_id]
 
 
-def frequent_categories(db: Session, limit: int = 10) -> List[dict]:
+def frequent_categories(db: Session, limit: int = 10, agent_id: Optional[uuid.UUID] = None) -> List[dict]:
     """Return most frequently used categories across tickets."""
+    query = db.query(Ticket.category_id, func.count(Ticket.ticket_id).label("ticket_count")).filter(Ticket.category_id.isnot(None))
+    if agent_id:
+        query = query.filter(Ticket.assigned_to == agent_id)
     rows = (
-        db.query(Ticket.category_id, func.count(Ticket.ticket_id).label("ticket_count"))
-        .filter(Ticket.category_id.isnot(None))
-        .group_by(Ticket.category_id)
+        query.group_by(Ticket.category_id)
         .order_by(func.count(Ticket.ticket_id).desc())
         .limit(limit)
         .all()

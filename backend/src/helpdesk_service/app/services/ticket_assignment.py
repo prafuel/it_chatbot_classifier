@@ -22,9 +22,10 @@ from app.crud import crud_ticket
 logger = logging.getLogger(__name__)
 
 
-def _find_least_loaded_agent(db: Session) -> Optional[User]:
+def _find_least_loaded_agent(db: Session, category_id: Optional[uuid.UUID] = None) -> Optional[User]:
     """
     Find the available IT_AGENT with the fewest IN_PROGRESS tickets.
+    If category_id is provided, prioritize agents specialized in that category.
     Returns None if no agents are available.
     """
     # Subquery: count of in-progress tickets per agent
@@ -38,28 +39,40 @@ def _find_least_loaded_agent(db: Session) -> Optional[User]:
         .subquery()
     )
 
-    # Join with users, filter available IT_AGENTs, order by least tickets
-    agent = (
+    # Base query for available IT_AGENTs
+    agent_query = (
         db.query(User)
         .outerjoin(in_progress_count, User.user_id == in_progress_count.c.assigned_to)
         .filter(User.role == RoleEnum.IT_AGENT)
         .filter(User.is_available == True)
-        .order_by(func.coalesce(in_progress_count.c.active_tickets, 0).asc())
-        .first()
     )
+
+    # Try to find specialized agents first
+    if category_id:
+        specialized_agent = (
+            agent_query.filter(User.specializations.any(category_id=category_id))
+            .order_by(func.coalesce(in_progress_count.c.active_tickets, 0).asc())
+            .first()
+        )
+        if specialized_agent:
+            logger.info(f"Found specialized agent for category {category_id}: {specialized_agent.name}")
+            return specialized_agent
+
+    # Fallback/General search
+    agent = agent_query.order_by(func.coalesce(in_progress_count.c.active_tickets, 0).asc()).first()
     return agent
 
 
 def auto_assign_ticket(db: Session, ticket_id: uuid.UUID) -> Ticket:
     """
-    Automatically assign a ticket to the least-loaded available agent.
+    Automatically assign a ticket to the least-loaded available agent (specialized prioritized).
     If no agent is available, set status to PENDING.
     """
     ticket = crud_ticket.get_ticket(db, ticket_id)
     if not ticket:
         raise ValueError(f"Ticket {ticket_id} not found")
 
-    agent = _find_least_loaded_agent(db)
+    agent = _find_least_loaded_agent(db, category_id=ticket.category_id)
 
     if agent:
         ticket = crud_ticket.assign_ticket(db, ticket_id, agent.user_id)
@@ -90,7 +103,7 @@ def reassign_pending_tickets(db: Session) -> list:
     )
 
     for ticket in pending_tickets:
-        agent = _find_least_loaded_agent(db)
+        agent = _find_least_loaded_agent(db, category_id=ticket.category_id)
         if not agent:
             logger.info("No more available agents — stopping reassignment")
             break

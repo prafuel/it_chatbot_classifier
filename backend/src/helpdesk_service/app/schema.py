@@ -22,6 +22,12 @@ class SourceEnum(str, Enum):
     portal = "portal"
     email = "email"
 
+class ApprovalStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    NA = "NA"
+
 
 # ---------------------------------------------------------------------------
 # Categories
@@ -64,7 +70,7 @@ class TicketBase(BaseModel):
     source: SourceEnum = SourceEnum.chatbot
 
 class TicketCreate(TicketBase):
-    created_by: uuid.UUID
+    pass
 
 class TicketUpdate(BaseModel):
     title: Optional[str] = None
@@ -84,6 +90,15 @@ class TicketResponse(TicketBase):
     status: StatusEnum
     created_by: uuid.UUID
     assigned_to: Optional[uuid.UUID] = None
+    assigned_to_name: Optional[str] = None
+    
+    # Approval fields
+    needs_approval: bool
+    approver_id: Optional[uuid.UUID] = None
+    approver_name: Optional[str] = None
+    designated_approver_type: Optional[str] = None
+    approval_status: ApprovalStatusEnum
+    
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None
@@ -99,7 +114,6 @@ class TicketResponse(TicketBase):
 
 class TicketCommentCreate(BaseModel):
     comment_text: str
-    user_id: uuid.UUID
 
 class TicketCommentResponse(BaseModel):
     comment_id: uuid.UUID
@@ -124,12 +138,58 @@ class KnowledgeBaseBase(BaseModel):
     tags: Optional[Any] = None
 
 class KnowledgeBaseCreate(KnowledgeBaseBase):
-    created_by: uuid.UUID
+    pass
 
 class KnowledgeBaseResponse(KnowledgeBaseBase):
     kb_id: uuid.UUID
     created_by: uuid.UUID
     approved: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ---------------------------------------------------------------------------
+# AI Query
+# ---------------------------------------------------------------------------
+
+class QueryRequest(BaseModel):
+    query: str
+
+class KBSourceItem(BaseModel):
+    kb_id: str
+    title: str
+    category: Optional[str] = None
+    similarity: float
+
+class QueryResponse(BaseModel):
+    query: str
+    answer: str
+    sources: list[KBSourceItem]
+    category_detected: Optional[str] = None
+
+class EmbeddingBuildResponse(BaseModel):
+    total: int
+    processed: int
+
+
+# ---------------------------------------------------------------------------
+# Users
+# ---------------------------------------------------------------------------
+
+class RoleEnum(str, Enum):
+    USER = "USER"
+    IT_AGENT = "IT_AGENT"
+    ADMIN = "ADMIN"
+
+class UserResponse(BaseModel):
+    user_id: uuid.UUID
+    name: str
+    email: str
+    role: RoleEnum
+    is_available: bool
+    specializations: List[CategoryResponse] = []
     created_at: datetime
 
     class Config:
