@@ -24,6 +24,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, insert as pg_insert
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
+# Pre-computed bcrypt hash of "Password123!" (avoids needing passlib locally)
+DEFAULT_PASSWORD_HASH = "$2b$12$4F3dzay1f042ru7U6APTm.ymb44htP.NPDz9JB7oFZpYdAiAUwBvC"
+
 # ---------------------------------------------------------------------------
 # Resolve paths
 # ---------------------------------------------------------------------------
@@ -97,11 +100,15 @@ class SourceEnum(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False)
+    first_name = Column(String(255), nullable=True)
+    last_name = Column(String(255), nullable=True)
+    name = Column(String(255), nullable=True)
+    encrypted_password = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
     is_available = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 class Category(Base):
     __tablename__ = "categories"
@@ -130,6 +137,10 @@ class Ticket(Base):
     resolved_at = Column(DateTime, nullable=True)
     sla_due_at = Column(DateTime, nullable=True)
     source = Column(Enum(SourceEnum), default=SourceEnum.chatbot)
+    needs_approval = Column(Boolean, default=False)
+    approver_id = Column(UUID(as_uuid=True), nullable=True)
+    designated_approver_type = Column(String(50), nullable=True)
+    approval_status = Column(String(20), nullable=True)
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_base"
@@ -203,8 +214,14 @@ def migrate_users(session: Session, wb) -> dict[int, uuid.UUID]:
             email=str(r["email"]),
             role=RoleEnum(r["role"]) if r.get("role") else RoleEnum.USER,
             is_available=parse_bool(r.get("is_available")),
+            encrypted_password=DEFAULT_PASSWORD_HASH,
             created_at=parse_datetime(r.get("created_at")),
-        ).on_conflict_do_nothing(index_elements=["user_id"])
+        ).on_conflict_do_update(
+            index_elements=["user_id"],
+            set_={
+                "encrypted_password": DEFAULT_PASSWORD_HASH,
+            }
+        )
         result = session.execute(stmt)
         count += result.rowcount
     session.commit()

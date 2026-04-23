@@ -2,7 +2,7 @@ services:
 
   helpdeskservice:
     ports:
-      - "3000:80"
+      - "7000:80"
     volumes:
       - ${PWD}/backend/src/helpdesk_service:/app
       - ${PWD}/backend/src/common:/app/app/common
@@ -30,7 +30,7 @@ services:
 
   ngrok:
     ports:
-      - "4040:4040"
+      - "4041:4041"
     env_file:
       - .env
     environment:

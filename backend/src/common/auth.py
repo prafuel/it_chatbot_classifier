@@ -92,11 +92,6 @@ class JWTBearer(HTTPBearer):
             )
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            if payload.get("sub") != "admin":
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Not an admin token",
-                )
             return payload
         except jwt.ExpiredSignatureError:
             raise HTTPException(

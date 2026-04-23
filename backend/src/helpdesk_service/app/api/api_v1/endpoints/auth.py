@@ -50,10 +50,11 @@ def sign_up(request: SignUpRequest, db: Session = Depends(get_db)):
         new_user = crud_user.create_user(db, request)
 
         payload = {
-            "id": str(new_user.id or new_user.user_id),
+            "id": str(new_user.user_id),
             "first_name": new_user.first_name,
             "last_name": new_user.last_name,
             "email": new_user.email,
+            "role": new_user.role.value if new_user.role else "USER",
         }
         jwt_token = create_token(payload)
         logger.info("User sign-up successful")
@@ -95,10 +96,11 @@ def sign_in(request: SignInRequest, db: Session = Depends(get_db)):
             )
 
         payload = {
-            "id": str(user.id or user.user_id),
+            "id": str(user.user_id),
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email,
+            "role": user.role.value if user.role else "USER",
         }
         jwt_token = create_token(payload)
         logger.info("User sign-in successful")

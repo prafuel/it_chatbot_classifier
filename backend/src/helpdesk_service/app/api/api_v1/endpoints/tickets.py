@@ -92,6 +92,16 @@ def assign_ticket(
     return ticket
 
 
+@router.patch("/{ticket_id}/auto-assign", response_model=schema.TicketResponse)
+def auto_assign_ticket(
+    ticket_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    """Automatically assign a ticket to the least-loaded available agent."""
+    ticket = ticket_assignment.auto_assign_ticket(db, ticket_id)
+    return ticket
+
+
 @router.patch("/{ticket_id}", response_model=schema.TicketResponse)
 def update_ticket(
     ticket_id: uuid.UUID,

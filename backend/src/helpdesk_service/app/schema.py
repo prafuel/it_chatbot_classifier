@@ -22,6 +22,11 @@ class SourceEnum(str, Enum):
     portal = "portal"
     email = "email"
 
+class ApprovalStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
 
 # ---------------------------------------------------------------------------
 # Categories
@@ -84,6 +89,12 @@ class TicketResponse(TicketBase):
     status: StatusEnum
     created_by: uuid.UUID
     assigned_to: Optional[uuid.UUID] = None
+    assigned_to_name: Optional[str] = None
+    needs_approval: bool = False
+    approver_id: Optional[uuid.UUID] = None
+    approver_name: Optional[str] = None
+    designated_approver_type: Optional[str] = None
+    approval_status: Optional[ApprovalStatus] = None
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None

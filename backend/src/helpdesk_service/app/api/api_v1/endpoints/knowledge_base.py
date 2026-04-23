@@ -45,12 +45,12 @@ def list_kb_articles(
 
 @router.get("/search", response_model=list[schema.KnowledgeBaseResponse])
 def search_kb(
-    q: str = Query(..., min_length=1, description="Search query"),
+    query: str = Query(..., min_length=1, description="Search query"),
     limit: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
     """Search approved KB articles by keyword."""
-    return crud_knowledge_base.search_kb(db, q, limit=limit)
+    return crud_knowledge_base.search_kb(db, query, limit=limit)
 
 
 @router.get("/{kb_id}", response_model=schema.KnowledgeBaseResponse)
